@@ -7,14 +7,31 @@ def load_data():
     df = pd.read_csv("airbnb.csv") 
     return df
 
+
 data = load_data()
 
 
-st.sidebar.header("Filters")
-neighborhoods = st.sidebar.multiselect("Select Neighborhoods", data['neighborhood'].unique(), default=data['neighborhood'].unique())
-listing_types = st.sidebar.multiselect("Select Listing Type", data['listing_type'].unique(), default=data['listing_type'].unique())
+st.write("Columns in dataset:", data.columns)  
 
-data_filtered = data[(data['neighborhood'].isin(neighborhoods)) & (data['listing_type'].isin(listing_types))]
+
+st.sidebar.header("Filters")
+neighborhoods = st.sidebar.multiselect(
+    "Select Neighborhoods", 
+    data['neighbourhood'].unique(), 
+    default=data['neighbourhood'].unique()
+)
+
+room_types = st.sidebar.multiselect(
+    "Select Room Type", 
+    data['room_type'].unique(), 
+    default=data['room_type'].unique()
+)
+
+
+data_filtered = data[
+    (data['neighbourhood'].isin(neighborhoods)) & 
+    (data['room_type'].isin(room_types))
+]
 
 
 tab1, tab2 = st.tabs(["Analysis", "Simulator"])
@@ -24,30 +41,31 @@ with tab1:
     col1, col2 = st.columns(2)
     
     with col1:
-        st.subheader("Listing Type vs Number of People")
-        table1 = data_filtered.groupby('listing_type')['num_people'].describe()
+        st.subheader("Room Type vs Price")
+        table1 = data_filtered.groupby('room_type')['price'].describe()
         st.dataframe(table1)
     
     with col2:
-        st.subheader("Price by Listing Type")
-        table2 = data_filtered.groupby('listing_type')['price'].describe()
+        st.subheader("Number of Reviews by Room Type")
+        table2 = data_filtered.groupby('room_type')['number_of_reviews'].describe()
         st.dataframe(table2)
     
     st.subheader("Top Reviewed Apartments by Neighborhood")
-    top_reviews = data_filtered.groupby(['neighborhood', 'listing_type']).agg({'reviews_per_month': 'sum'}).reset_index()
+    top_reviews = data_filtered.groupby(['neighbourhood', 'room_type']).agg({'reviews_per_month': 'sum'}).reset_index()
     st.dataframe(top_reviews)
-
 
 with tab2:
     st.header("Price Recommendation Simulator")
     
-   
-    sim_neighborhood = st.selectbox("Select Neighborhood", data['neighborhood'].unique())
-    sim_type = st.selectbox("Select Listing Type", data['listing_type'].unique())
-    sim_people = st.slider("Number of People", 1, max(data['num_people']), 2)
+    sim_neighborhood = st.selectbox("Select Neighborhood", data['neighbourhood'].unique())
+    sim_type = st.selectbox("Select Room Type", data['room_type'].unique())
+    sim_people = st.slider("Minimum Nights", 1, max(data['minimum_nights']), 2)
     
-
-    filtered_price = data[(data['neighborhood'] == sim_neighborhood) & (data['listing_type'] == sim_type)]
+    filtered_price = data[
+        (data['neighbourhood'] == sim_neighborhood) & 
+        (data['room_type'] == sim_type)
+    ]
     recommended_price = filtered_price['price'].median() if not filtered_price.empty else "Not enough data"
     
     st.subheader(f"Recommended Price: ${recommended_price}")
+
